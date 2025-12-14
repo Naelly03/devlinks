@@ -3,8 +3,17 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function getLinks() {
-  const links = await prisma.link.findMany()
+  const links = await prisma.link.findMany({
+    orderBy: { createdAt: 'desc' } 
+  })
   return links
+}
+
+function formatUrl(url: string) {
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url
+  }
+  return `https://${url}`
 }
 
 export default async function Home() {
@@ -20,10 +29,9 @@ export default async function Home() {
         />
       </div>
 
-      <h1 className="mb-2 text-2xl font-bold">Naelly Vitoria</h1>
-      <p className="mb-8 text-gray-400">Dev & Entusiasta de tecnologia</p>
+      <h1 className="mb-2 text-2xl font-bold">Naelly</h1>
+      <p className="mb-8 text-gray-400">Developer & Tech Enthusiast</p>
 
-      {/* Lista de Links */}
       <div className="flex w-full max-w-sm flex-col gap-4">
         {links.length === 0 ? (
           <p className="text-center text-gray-500">Nenhum link cadastrado ainda...</p>
@@ -31,7 +39,7 @@ export default async function Home() {
           links.map((link) => (
             <a
               key={link.id}
-              href={link.url}
+              href={formatUrl(link.url)} 
               target="_blank"
               rel="noopener noreferrer"
               className="flex w-full items-center justify-center rounded-lg bg-gray-800 p-4 font-medium transition-colors hover:bg-purple-600"
@@ -41,6 +49,10 @@ export default async function Home() {
           ))
         )}
       </div>
+      
+      <a href="/login" className="fixed bottom-4 right-4 text-xs text-gray-600 hover:text-gray-400">
+        Admin
+      </a>
     </div>
   )
 }
