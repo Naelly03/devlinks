@@ -31,3 +31,13 @@ export async function deleteLink(id: string) {
   revalidatePath('/')
   revalidatePath('/admin')
 }
+
+export async function updateLink(id: string, title: string, url: string) {
+  await prisma.link.update({
+    where: { id },
+    data: { title, url }
+  })
+
+  revalidatePath('/')
+  revalidatePath('/admin')
+}
