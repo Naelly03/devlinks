@@ -12,7 +12,6 @@ export default function Login() {
 
   async function handleLogin() {
     setError(null)
-    
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -20,19 +19,18 @@ export default function Login() {
 
     if (error) {
       setError('Erro ao entrar. Verifique e-mail e senha.')
-      console.log(error.message)
     } else {
       router.push('/admin') 
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-900 p-4">
-      <div className="w-full max-w-md rounded-lg bg-gray-800 p-8 shadow-lg">
-        <h1 className="mb-6 text-center text-2xl font-bold text-white">Login Admin</h1>
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+      <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-xl border border-gray-100">
+        <h1 className="mb-6 text-center text-2xl font-bold text-gray-800">Login Admin</h1>
         
         {error && (
-          <div className="mb-4 rounded bg-red-500/20 p-3 text-sm text-red-200">
+          <div className="mb-4 rounded bg-red-50 p-3 text-sm text-red-600 border border-red-100">
             {error}
           </div>
         )}
@@ -41,21 +39,21 @@ export default function Login() {
           <input
             type="email"
             placeholder="Seu e-mail"
-            className="rounded bg-gray-700 p-3 text-white outline-none focus:ring-2 focus:ring-purple-500"
+            className="rounded-lg border border-gray-300 bg-gray-50 p-3 text-gray-900 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
           <input
             type="password"
             placeholder="Sua senha"
-            className="rounded bg-gray-700 p-3 text-white outline-none focus:ring-2 focus:ring-purple-500"
+            className="rounded-lg border border-gray-300 bg-gray-50 p-3 text-gray-900 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
           
           <button
             onClick={handleLogin}
-            className="mt-2 rounded bg-purple-600 p-3 font-bold text-white hover:bg-purple-700 transition-colors"
+            className="mt-2 rounded-lg bg-purple-600 p-3 font-bold text-white hover:bg-purple-700 transition-colors shadow-lg shadow-purple-200"
           >
             Entrar
           </button>
