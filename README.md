@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🔗 DevLinks
 
-## Getting Started
+O **DevLinks** é um agregador de links personalizado (estilo Linktree), desenvolvido para centralizar suas redes sociais, portfólio e projetos em uma única página pública, com um painel administrativo completo para gerenciamento de conteúdo.
 
-First, run the development server:
+<img width="1265" height="532" alt="home" src="https://github.com/user-attachments/assets/cca407c7-13ab-4a92-923b-067378148ede" />
+
+
+## 🚀 Tecnologias
+
+Este projeto foi construído utilizando as tecnologias mais modernas do ecossistema React:
+
+- **[Next.js 16](https://nextjs.org/)** (App Router & Server Actions)
+- **[Tailwind CSS](https://tailwindcss.com/)** (Estilização responsiva e tema Clean)
+- **[Prisma ORM](https://www.prisma.io/)** (Abstração do Banco de Dados)
+- **[Supabase](https://supabase.com/)** (PostgreSQL na nuvem e Autenticação)
+- **TypeScript** (Tipagem estática)
+- **Vercel** (CI/CD e Hospedagem)
+
+## ✨ Funcionalidades
+
+- **📱 Página de Perfil Pública:**
+  - Design limpo e minimalista (Light Mode).
+  - **Botões Inteligentes:** O sistema detecta o nome da rede social (LinkedIn, GitHub, Portfolio) e aplica as cores oficiais da marca automaticamente.
+  - Layout totalmente responsivo (Mobile First).
+
+- **🔐 Painel Administrativo:**
+  - Login seguro via E-mail/Senha (Supabase Auth).
+  - Proteção de rotas (Redirecionamento se não estiver logado).
+
+- **⚙️ Gerenciamento Completo (CRUD):**
+  - **Adicionar:** Criação rápida de novos links.
+  - **Editar:** Atualização de títulos e URLs existentes.
+  - **Excluir:** Remoção de links.
+  - **Validação:** Adição automática de `https://` para evitar links quebrados.
+
+## 📂 Estrutura do Projeto
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+├── app/
+│   ├── admin/      # Painel de Controle (Protegido)
+│   ├── login/      # Tela de Autenticação
+│   ├── actions.ts  # Server Actions (Lógica do Back-end)
+│   ├── page.tsx    # Página Pública (Home)
+│   └── layout.tsx  # Layout Global
+├── lib/
+│   └── supabase.ts # Configuração do Cliente Supabase
+├── prisma/
+│   └── schema.prisma # Modelagem do Banco de Dados
+└── public/         # Arquivos estáticos
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🛠️ Como rodar localmente
+1. Clone o repositório:
+  ```
+  git clone [https://github.com/Naelly03/devlinks.git](https://github.com/Naelly03/devlinks.git)
+  ```
+2. Instale as dependências:
+  ```
+  npm install
+  ```
+3. Configure as Variáveis de Ambiente: Crie um arquivo .env na raiz do projeto e preencha com suas credenciais do Supabase:
+  ```
+  # Banco de Dados (Pode usar SQLite localmente para facilitar)
+  DATABASE_URL="file:./dev.db"
+  
+  # Chaves do Supabase (Project Settings > API)
+  NEXT_PUBLIC_SUPABASE_URL="SUA_URL_DO_SUPABASE"
+  NEXT_PUBLIC_SUPABASE_ANON_KEY="SUA_CHAVE_ANON_PUBLIC"
+  ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+4. Prepare o Banco de Dados:
+  ```
+  npx prisma db push
+  ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+5. Rode o projeto:
+  ```
+  npm run dev
+  ```
+Acesse http://localhost:3000 no seu navegador.
 
-## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+##  Deploy
+O projeto está configurado para deploy automático na Vercel. Para produção, lembre-se de alterar o provider do Prisma para postgresql e configurar a DATABASE_URL do Supabase nas Environment Variables da Vercel.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Desenvolvido por Naelly Vitoria
