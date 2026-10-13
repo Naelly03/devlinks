@@ -1,30 +1,11 @@
 'use server'
 
-import { PrismaClient } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
-import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
-
-const prisma = new PrismaClient()
+import { prisma } from '../lib/prisma'
+import { createClient } from '../lib/supabase/server'
 
 async function checkAuth() {
-  const cookieStore = await cookies()
-  
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      auth: {
-        persistSession: false,
-      },
-      global: {
-        headers: {
-          cookie: cookieStore.toString(),
-        },
-      },
-    }
-  )
-
+  const supabase = await createClient()
   const { data: { user }, error } = await supabase.auth.getUser()
 
   if (error || !user) {
@@ -35,6 +16,8 @@ async function checkAuth() {
 }
 
 export async function getLinks() {
+  await checkAuth()
+
   return await prisma.link.findMany({
     orderBy: { createdAt: 'desc' }
   })

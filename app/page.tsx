@@ -1,6 +1,8 @@
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '../lib/prisma'
+import Backdrop from './components/Backdrop'
+import LinkIcon, { getLinkKind } from './components/LinkIcon'
+import ShareButton from './components/ShareButton'
+import ThemeToggle from './components/ThemeToggle'
 
 async function getLinks() {
   const links = await prisma.link.findMany({
@@ -16,62 +18,74 @@ function formatUrl(url: string) {
   return `https://${url}`
 }
 
-function getButtonStyle(title: string) {
-  const text = title.toLowerCase()
-
-  if (text.includes('linkedin')) {
-    return 'bg-blue-600 text-white hover:bg-blue-700'
-  }
-  
-  if (text.includes('github')) {
-    return 'bg-[#24292F] text-white hover:bg-black'
-  }
-  
-  if (text.includes('portifolio') || text.includes('portfolio')) {
-    return 'bg-purple-600 text-white hover:bg-purple-700'
-  }
-
-  return 'bg-gray-800 text-white hover:bg-gray-900'
-}
-
 export default async function Home() {
   const links = await getLinks()
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4 text-gray-800">
-      
-      <div className="mb-6 h-28 w-28 overflow-hidden rounded-full border-4 border-white shadow-lg">
-        <img 
-          src="https://github.com/Naelly03.png" 
-          alt="Foto de Perfil" 
-          className="h-full w-full object-cover"
-        />
-      </div>
+    <div className="relative min-h-screen overflow-hidden bg-page text-ink">
+      <Backdrop />
 
-      <h1 className="mb-2 text-3xl font-bold">Naelly Vitoria</h1>
-      <p className="mb-8 text-gray-500">Developer & Tech Enthusiast</p>
+      <div className="relative z-10 flex min-h-screen flex-col items-center px-5 pb-12 pt-6">
+        <div className="flex w-full max-w-[440px] justify-between">
+          <ShareButton />
+          <ThemeToggle className="rounded-full" />
+        </div>
 
-      <div className="flex w-full max-w-sm flex-col gap-4">
-        {links.length === 0 ? (
-          <p className="text-center text-gray-500">Nenhum link cadastrado ainda...</p>
-        ) : (
-          links.map((link) => (
-            <a
-              key={link.id}
-              href={formatUrl(link.url)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`flex w-full items-center justify-center rounded-lg p-4 font-bold transition-colors ${getButtonStyle(link.title)}`}
-            >
-              {link.title}
-            </a>
-          ))
-        )}
+        <div className="flex w-full max-w-[440px] flex-1 flex-col justify-center pt-2">
+          <div className="fade-up mb-8 flex flex-col items-center text-center">
+            <div className="rounded-full bg-gradient-to-br from-accent-soft to-accent p-[3px] shadow-[0_18px_50px_-12px_var(--accent-glow)]">
+              <img
+                src="https://github.com/Naelly03.png"
+                alt="Foto de Naelly Vitoria"
+                className="block h-[108px] w-[108px] rounded-full border-4 border-page bg-glass object-cover"
+              />
+            </div>
+            <h1 className="mb-1.5 mt-[22px] font-display text-[30px] font-bold tracking-tight">
+              Naelly Vitoria
+            </h1>
+            <p className="text-base text-muted">Developer &amp; Tech Enthusiast</p>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            {links.length === 0 ? (
+              <p className="text-center text-muted">Nenhum link cadastrado ainda...</p>
+            ) : (
+              links.map((link, i) => (
+                <div
+                  key={link.id}
+                  className="fade-up"
+                  style={{ '--delay': `${(0.18 + i * 0.09).toFixed(2)}s` } as React.CSSProperties}
+                >
+                  <a
+                    href={formatUrl(link.url)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="glass flex items-center gap-3.5 rounded-[18px] py-2.5 pl-2.5 pr-4 text-ink shadow-[var(--shadow)] transition duration-200 hover:-translate-y-[3px] hover:border-accent hover:bg-glass-hover"
+                  >
+                    <LinkIcon kind={getLinkKind(link.title, link.url)} size={44} />
+                    <span className="flex-1 text-base font-semibold">{link.title}</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M7 7h10v10" />
+                      <path d="M7 17 17 7" />
+                    </svg>
+                  </a>
+                </div>
+              ))
+            )}
+          </div>
+
+          <a
+            href="/login"
+            className="mt-10 inline-flex h-[46px] items-center gap-2.5 self-center rounded-full border border-dashed border-accent-soft px-5 text-sm font-semibold text-ink transition duration-200 hover:-translate-y-0.5 hover:bg-glass-hover"
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--accent-soft)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="11" rx="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            Área admin
+          </a>
+        </div>
       </div>
-      
-      <a href="/login" className="fixed bottom-4 right-4 text-xs text-gray-400 hover:text-gray-600">
-        Admin
-      </a>
     </div>
   )
 }

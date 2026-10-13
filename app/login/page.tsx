@@ -1,17 +1,29 @@
 'use client'
 
 import { useState } from 'react'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '../../lib/supabase/client'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import Backdrop from '../components/Backdrop'
+import LinkIcon from '../components/LinkIcon'
+import ThemeToggle from '../components/ThemeToggle'
+
+const fieldClass =
+  'h-12 w-full rounded-xl border border-glass-border bg-field px-3.5 text-[15px] font-normal text-ink outline-none transition focus:border-accent focus:shadow-[0_0_0_3px_var(--ring)]'
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
 
-  async function handleLogin() {
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault()
+    if (loading) return
+
     setError(null)
+    setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -19,46 +31,73 @@ export default function Login() {
 
     if (error) {
       setError('Erro ao entrar. Verifique e-mail e senha.')
+      setLoading(false)
     } else {
-      router.push('/admin') 
+      router.push('/admin')
+      router.refresh()
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-xl border border-gray-100">
-        <h1 className="mb-6 text-center text-2xl font-bold text-gray-800">Login Admin</h1>
-        
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-page px-5 py-6 text-ink">
+      <Backdrop />
+      <ThemeToggle className="absolute right-6 top-6 z-10 rounded-full" />
+
+      <form
+        onSubmit={handleLogin}
+        className="glass fade-up relative z-10 w-full max-w-[400px] rounded-3xl p-8 shadow-[var(--shadow)] backdrop-blur-[22px]"
+      >
+        <div className="mb-[26px] flex flex-col items-center text-center">
+          <LinkIcon kind="link" size={52} />
+          <h1 className="mb-1.5 mt-[18px] font-display text-2xl font-bold tracking-tight">
+            Login Admin
+          </h1>
+          <p className="text-sm text-muted">Acesso restrito ao painel</p>
+        </div>
+
         {error && (
-          <div className="mb-4 rounded bg-red-50 p-3 text-sm text-red-600 border border-red-100">
+          <div
+            role="alert"
+            className="mb-4 rounded-xl border border-danger-border bg-danger-bg px-3.5 py-3 text-sm text-danger"
+          >
             {error}
           </div>
         )}
 
-        <div className="flex flex-col gap-4">
-          <input
-            type="email"
-            placeholder="Seu e-mail"
-            className="rounded-lg border border-gray-300 bg-gray-50 p-3 text-gray-900 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <input
-            type="password"
-            placeholder="Sua senha"
-            className="rounded-lg border border-gray-300 bg-gray-50 p-3 text-gray-900 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          
+        <div className="flex flex-col gap-3.5">
+          <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-muted">
+            E-mail
+            <input
+              type="email"
+              placeholder="Seu e-mail"
+              className={fieldClass}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-muted">
+            Senha
+            <input
+              type="password"
+              placeholder="Sua senha"
+              className={fieldClass}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </label>
+
           <button
-            onClick={handleLogin}
-            className="mt-2 rounded-lg bg-purple-600 p-3 font-bold text-white hover:bg-purple-700 transition-colors shadow-lg shadow-purple-200"
+            type="submit"
+            disabled={loading}
+            className="mt-1.5 h-[50px] cursor-pointer rounded-xl bg-accent text-base font-bold text-accent-fg shadow-[0_10px_28px_-10px_var(--accent-glow)] transition hover:-translate-y-px disabled:opacity-70"
           >
-            Entrar
+            {loading ? 'Entrando…' : 'Entrar'}
           </button>
+          <Link href="/" className="text-center text-sm text-muted transition-colors hover:text-ink">
+            ← Voltar para a página
+          </Link>
         </div>
-      </div>
+      </form>
     </div>
   )
 }
