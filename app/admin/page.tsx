@@ -1,18 +1,20 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase/client'
-import { addLink, deleteLink, getLinks, updateLink } from '../actions'
+import { addLink, deleteLink, getLinks, reorderLinks, toggleLink, updateLink } from '../actions'
 import Backdrop from '../components/Backdrop'
 import LinkIcon, { getLinkKind } from '../components/LinkIcon'
 import ThemeToggle from '../components/ThemeToggle'
 
-type Link = {
+type LinkItem = {
   id: string
   title: string
   url: string
+  active: boolean
 }
 
 const fieldClass =
@@ -22,12 +24,14 @@ const ghostButton =
   'h-11 cursor-pointer rounded-xl border border-glass-border bg-glass px-4 text-sm font-semibold text-ink transition-colors hover:bg-glass-hover'
 
 export default function Admin() {
-  const [links, setLinks] = useState<Link[]>([])
+  const [links, setLinks] = useState<LinkItem[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [editingLink, setEditingLink] = useState<Link | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<Link | null>(null)
+  const [editingLink, setEditingLink] = useState<LinkItem | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<LinkItem | null>(null)
   const [toast, setToast] = useState<string | null>(null)
+  const [dragId, setDragId] = useState<string | null>(null)
+  const [overId, setOverId] = useState<string | null>(null)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const router = useRouter()
 
@@ -77,7 +81,7 @@ export default function Admin() {
     setSaving(false)
   }
 
-  function handleEditClick(link: Link) {
+  function handleEditClick(link: LinkItem) {
     setEditingLink(link)
     setTitleInput(link.title)
     setUrlInput(link.url)
@@ -101,6 +105,42 @@ export default function Admin() {
     fetchLinks()
   }
 
+  async function handleToggle(link: LinkItem) {
+    const active = !link.active
+    setLinks((prev) => prev.map((l) => (l.id === link.id ? { ...l, active } : l)))
+    try {
+      await toggleLink(link.id, active)
+      say(active ? 'Link ativado' : 'Link desativado')
+    } catch {
+      say('Erro ao atualizar o link')
+      fetchLinks()
+    }
+  }
+
+  async function handleDrop(targetId: string) {
+    const from = dragId
+    setDragId(null)
+    setOverId(null)
+    if (!from || from === targetId) return
+
+    const next = links.slice()
+    const a = next.findIndex((l) => l.id === from)
+    const b = next.findIndex((l) => l.id === targetId)
+    const [moved] = next.splice(a, 1)
+    next.splice(b, 0, moved)
+    setLinks(next)
+
+    try {
+      await reorderLinks(next.map((l) => l.id))
+      say('Ordem atualizada')
+    } catch {
+      say('Erro ao salvar a ordem')
+      fetchLinks()
+    }
+  }
+
+  const activeLinks = links.filter((l) => l.active)
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-page text-muted">
@@ -119,7 +159,8 @@ export default function Admin() {
             <div>
               <h1 className="mb-1 font-display text-[28px] font-bold tracking-tight">Painel Admin</h1>
               <p className="text-sm text-muted">
-                {links.length} {links.length === 1 ? 'link' : 'links'}
+                {links.length} {links.length === 1 ? 'link' : 'links'} · {activeLinks.length}{' '}
+                {activeLinks.length === 1 ? 'ativo' : 'ativos'}
               </p>
             </div>
             <div className="flex items-center gap-2.5">
@@ -188,7 +229,10 @@ export default function Admin() {
               </form>
 
               <div>
-                <h2 className="mb-3 px-1 font-display text-base font-semibold">Seus links</h2>
+                <div className="mb-3 flex items-baseline justify-between px-1">
+                  <h2 className="font-display text-base font-semibold">Seus links</h2>
+                  <span className="text-[13px] text-muted">Arraste para reordenar</span>
+                </div>
                 <div className="flex flex-col gap-2.5">
                   {links.length === 0 && (
                     <p className="px-1 text-sm text-muted">Nenhum link cadastrado ainda...</p>
@@ -196,15 +240,68 @@ export default function Admin() {
                   {links.map((link) => (
                     <div
                       key={link.id}
-                      className={`glass flex items-center gap-3 rounded-2xl py-3 pl-3 pr-3 transition hover:bg-glass-hover ${
-                        editingLink?.id === link.id ? 'border-accent-soft' : ''
+                      draggable
+                      onDragStart={(e) => {
+                        setDragId(link.id)
+                        e.dataTransfer.effectAllowed = 'move'
+                        try {
+                          e.dataTransfer.setData('text/plain', link.id)
+                        } catch {}
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault()
+                        if (overId !== link.id) setOverId(link.id)
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault()
+                        handleDrop(link.id)
+                      }}
+                      onDragEnd={() => {
+                        setDragId(null)
+                        setOverId(null)
+                      }}
+                      className={`glass flex items-center gap-3 rounded-2xl py-3 pl-2 pr-3 transition hover:bg-glass-hover ${
+                        dragId === link.id ? 'opacity-40' : ''
+                      } ${
+                        overId === link.id && dragId !== link.id
+                          ? 'border-accent'
+                          : editingLink?.id === link.id
+                            ? 'border-accent-soft'
+                            : ''
                       }`}
                     >
-                      <LinkIcon kind={getLinkKind(link.title, link.url)} size={40} />
-                      <div className="min-w-0 flex-1">
+                      <span aria-hidden="true" className="flex cursor-grab px-0.5 py-1.5 text-muted">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                          <circle cx="9" cy="6" r="1.7" />
+                          <circle cx="15" cy="6" r="1.7" />
+                          <circle cx="9" cy="12" r="1.7" />
+                          <circle cx="15" cy="12" r="1.7" />
+                          <circle cx="9" cy="18" r="1.7" />
+                          <circle cx="15" cy="18" r="1.7" />
+                        </svg>
+                      </span>
+                      <div className={`flex ${link.active ? '' : 'opacity-45'}`}>
+                        <LinkIcon kind={getLinkKind(link.title, link.url)} size={40} />
+                      </div>
+                      <div className={`min-w-0 flex-1 ${link.active ? '' : 'opacity-45'}`}>
                         <p className="text-[15px] font-semibold">{link.title}</p>
                         <p className="mt-0.5 truncate text-[13px] text-muted">{link.url}</p>
                       </div>
+                      <button
+                        role="switch"
+                        aria-checked={link.active}
+                        aria-label="Ativar link"
+                        onClick={() => handleToggle(link)}
+                        className={`relative h-6 w-[42px] flex-none cursor-pointer rounded-xl transition-colors ${
+                          link.active ? 'bg-accent' : 'bg-[rgba(128,124,150,0.45)]'
+                        }`}
+                      >
+                        <span
+                          className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.3)] transition-[left] ${
+                            link.active ? 'left-[21px]' : 'left-[3px]'
+                          }`}
+                        />
+                      </button>
                       <button
                         aria-label="Editar"
                         onClick={() => handleEditClick(link)}
@@ -243,19 +340,21 @@ export default function Admin() {
                 />
                 <div className="relative flex flex-col items-center px-[18px] pb-[18px] pt-[52px]">
                   <div className="rounded-full bg-gradient-to-br from-accent-soft to-accent p-0.5">
-                    <img
+                    <Image
                       src="https://github.com/Naelly03.png"
                       alt=""
+                      width={72}
+                      height={72}
                       className="block h-[72px] w-[72px] rounded-full border-[3px] border-page bg-glass object-cover"
                     />
                   </div>
                   <p className="mb-0.5 mt-3.5 font-display text-[19px] font-bold tracking-tight">Naelly Vitoria</p>
                   <p className="mb-[22px] text-[13px] text-muted">Developer &amp; Tech Enthusiast</p>
                   <div className="flex w-full flex-col gap-[9px]">
-                    {links.length === 0 ? (
-                      <p className="text-center text-[13px] text-muted">Nenhum link cadastrado</p>
+                    {activeLinks.length === 0 ? (
+                      <p className="text-center text-[13px] text-muted">Nenhum link ativo</p>
                     ) : (
-                      links.map((link) => (
+                      activeLinks.map((link) => (
                         <div
                           key={link.id}
                           className="flex items-center gap-2.5 rounded-[14px] border border-glass-border bg-glass py-[7px] pl-[7px] pr-3"

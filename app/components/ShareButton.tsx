@@ -1,16 +1,24 @@
 'use client'
 
+import Image from 'next/image'
 import { useState } from 'react'
+import QRCode from 'qrcode'
 
 export default function ShareButton() {
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [pageUrl, setPageUrl] = useState('')
+  const [qr, setQr] = useState('')
 
-  function openModal() {
-    setPageUrl(window.location.origin)
+  async function openModal() {
+    const url = window.location.origin
+    setPageUrl(url)
     setCopied(false)
+    setQr('')
     setOpen(true)
+    try {
+      setQr(await QRCode.toDataURL(url, { margin: 0, width: 176, color: { dark: '#17131f', light: '#ffffff' } }))
+    } catch {}
   }
 
   async function copy() {
@@ -62,6 +70,12 @@ export default function ShareButton() {
                 </svg>
               </button>
             </div>
+            <div className="mx-auto rounded-[18px] bg-white p-3.5">
+              <div className="h-[176px] w-[176px]">
+                {qr && <Image src={qr} alt="QR code da página" width={176} height={176} unoptimized className="block h-full w-full" />}
+              </div>
+            </div>
+            <p className="text-center text-[13px] text-muted">Aponte a câmera para abrir a página</p>
             <div className="flex items-center gap-2 rounded-xl border border-glass-border bg-field py-1.5 pl-3.5 pr-1.5">
               <span className="flex-1 truncate text-sm">{pageUrl}</span>
               <button

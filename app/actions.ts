@@ -15,11 +15,16 @@ async function checkAuth() {
   return user
 }
 
+function revalidateAll() {
+  revalidatePath('/')
+  revalidatePath('/admin')
+}
+
 export async function getLinks() {
   await checkAuth()
 
   return await prisma.link.findMany({
-    orderBy: { createdAt: 'desc' }
+    orderBy: [{ position: 'asc' }, { createdAt: 'desc' }]
   })
 }
 
@@ -31,12 +36,14 @@ export async function addLink(formData: FormData) {
 
   if (!title || !url) return
 
+  // Novo link entra no fim da lista
+  const last = await prisma.link.aggregate({ _max: { position: true } })
+
   await prisma.link.create({
-    data: { title, url }
+    data: { title, url, position: (last._max.position ?? -1) + 1 }
   })
 
-  revalidatePath('/')
-  revalidatePath('/admin')
+  revalidateAll()
 }
 
 export async function deleteLink(id: string) {
@@ -46,8 +53,7 @@ export async function deleteLink(id: string) {
     where: { id }
   })
 
-  revalidatePath('/')
-  revalidatePath('/admin')
+  revalidateAll()
 }
 
 export async function updateLink(id: string, title: string, url: string) {
@@ -58,6 +64,32 @@ export async function updateLink(id: string, title: string, url: string) {
     data: { title, url }
   })
 
-  revalidatePath('/')
-  revalidatePath('/admin')
+  revalidateAll()
+}
+
+export async function toggleLink(id: string, active: boolean) {
+  await checkAuth()
+
+  await prisma.link.update({
+    where: { id },
+    data: { active }
+  })
+
+  revalidateAll()
+}
+
+export async function reorderLinks(ids: string[]) {
+  await checkAuth()
+
+  if (!Array.isArray(ids) || ids.some((id) => typeof id !== 'string')) {
+    throw new Error('Lista de links inválida')
+  }
+
+  await prisma.$transaction(
+    ids.map((id, position) =>
+      prisma.link.update({ where: { id }, data: { position } })
+    )
+  )
+
+  revalidateAll()
 }

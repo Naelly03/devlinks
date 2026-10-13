@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { prisma } from '../lib/prisma'
 import Backdrop from './components/Backdrop'
 import LinkIcon, { getLinkKind } from './components/LinkIcon'
@@ -6,7 +7,8 @@ import ThemeToggle from './components/ThemeToggle'
 
 async function getLinks() {
   const links = await prisma.link.findMany({
-    orderBy: { createdAt: 'desc' }
+    where: { active: true },
+    orderBy: [{ position: 'asc' }, { createdAt: 'desc' }]
   })
   return links
 }
@@ -34,9 +36,12 @@ export default async function Home() {
         <div className="flex w-full max-w-[440px] flex-1 flex-col justify-center pt-2">
           <div className="fade-up mb-8 flex flex-col items-center text-center">
             <div className="rounded-full bg-gradient-to-br from-accent-soft to-accent p-[3px] shadow-[0_18px_50px_-12px_var(--accent-glow)]">
-              <img
+              <Image
                 src="https://github.com/Naelly03.png"
                 alt="Foto de Naelly Vitoria"
+                width={108}
+                height={108}
+                priority
                 className="block h-[108px] w-[108px] rounded-full border-4 border-page bg-glass object-cover"
               />
             </div>
